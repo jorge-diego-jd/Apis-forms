@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lead Submission Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    form {
+      max-width: 400px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="email"], input[type="tel"], input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lead Submission Form</h1>
+  <form id="leadForm">
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" required>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+
+    <label for="contact">Contact:</label>
+    <input type="tel" id="contact" name="contact" required minlength="10" maxlength="10">
+
+    <label for="zip">Zip Code:</label>
+    <input type="number" id="zip" name="zip" required>
+
+    <label for="jornayaLeadId">Jornaya Lead ID:</label>
+    <input type="text" id="jornayaLeadId" name="jornayaLeadId" required>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    const pingUrl = "https://leadapi.px.com/api/call/ping";
+    const postUrl = "https://leadapi.px.com/api/call/post";
+    const apiToken = "79101A88-AACF-42B9-9446-0109087C3EBC";
+
+    document.getElementById("leadForm").addEventListener("submit", async function (event) {
+      event.preventDefault(); // Prevent form submission
+
+      // Collect form data
+      const formData = {
+        FirstName: document.getElementById("name").value,
+        Email: document.getElementById("email").value,
+        Phone: document.getElementById("contact").value,
+        PostalCode: document.getElementById("zip").value,
+        JornayaLeadId: document.getElementById("jornayaLeadId").value,
+      };
+
+      try {
+        // Step 1: Ping the API
+        const pingResponse = await fetch(pingUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiToken}`,
+          },
+          body: JSON.stringify(formData),
+        });
+
+        const pingData = await pingResponse.json();
+
+        if (!pingResponse.ok || !pingData.pingId) {
+          console.error("Ping API Error:", pingData);
+          alert("Ping API Error: " + pingData.message || "Unknown error.");
+          return;
+        }
+
+        console.log("Ping Successful:", pingData);
+
+        // Step 2: Post to the API
+        const postResponse = await fetch(postUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiToken}`,
+          },
+          body: JSON.stringify({
+            ...formData,
+            PingId: pingData.pingId, // Use pingId from Ping API response
+          }),
+        });
+
+        const postData = await postResponse.json();
+
+        if (!postResponse.ok) {
+          console.error("Post API Error:", postData);
+          alert("Post API Error: " + postData.message || "Unknown error.");
+          return;
+        }
+
+        console.log("Post Successful:", postData);
+        alert("Lead submitted successfully!");
+      } catch (error) {
+        console.error("Error submitting lead:", error);
+        alert("An error occurred while submitting the lead. Please try again.");
+      }
+    });
+  </script>
+</body>
+</html>
